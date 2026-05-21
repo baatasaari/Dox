@@ -19,6 +19,7 @@ class RedisSettings(BaseModel):
 class AdapterSettings(BaseModel):
     event_bus: str = "redis_streams"
     object_store: str = "local_fs"
+    local_fs_path: str = "local_fs_store"
     secret_store: str = "env"
     metrics: str = "prometheus"
 
