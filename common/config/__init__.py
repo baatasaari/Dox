@@ -36,6 +36,11 @@ class RetentionSettings(BaseModel):
     delete_after_days: int = 730
 
 
+class AuthSettings(BaseModel):
+    access_token_expire_minutes: int = 30
+    algorithm: str = "HS256"
+
+
 class PlatformSettings(BaseModel):
     signing_key_private: str = ""
     signing_key_public: str = ""
@@ -54,6 +59,7 @@ class Settings(BaseSettings):
     database: DatabaseSettings
     redis: RedisSettings = RedisSettings()
     adapters: AdapterSettings = AdapterSettings()
+    auth: AuthSettings = AuthSettings()
     sentinel: SentinelSettings = SentinelSettings()
     retention: RetentionSettings = RetentionSettings()
     platform: PlatformSettings = PlatformSettings()

@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 import re
-from enum import Enum
+from enum import StrEnum
 
 
-class Environment(str, Enum):
+class Environment(StrEnum):
     dev = "dev"
     test = "test"
     staging = "staging"
     prod = "prod"
 
 
-class EventType(str, Enum):
+class EventType(StrEnum):
     user_input_received = "user_input_received"
     agent_started = "agent_started"
     agent_step_started = "agent_step_started"
@@ -48,14 +48,14 @@ class EventType(str, Enum):
     replay_completed = "replay_completed"
 
 
-class Severity(str, Enum):
+class Severity(StrEnum):
     low = "low"
     medium = "medium"
     high = "high"
     critical = "critical"
 
 
-class SentinelType(str, Enum):
+class SentinelType(StrEnum):
     trajectory = "trajectory"
     tool_misuse = "tool_misuse"
     policy_breach = "policy_breach"
@@ -69,7 +69,7 @@ class SentinelType(str, Enum):
     regulatory = "regulatory"
 
 
-class InterventionAction(str, Enum):
+class InterventionAction(StrEnum):
     allow = "allow"
     warn = "warn"
     redact = "redact"
@@ -80,6 +80,19 @@ class InterventionAction(str, Enum):
     rollback_memory_write = "rollback_memory_write"
     isolate_agent = "isolate_agent"
     terminate_execution = "terminate_execution"
+
+
+class UserRole(StrEnum):
+    admin = "admin"
+    operator = "operator"
+    viewer = "viewer"
+    agent = "agent"
+
+
+class SubscriptionTier(StrEnum):
+    starter = "starter"
+    professional = "professional"
+    enterprise = "enterprise"
 
 
 _SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
