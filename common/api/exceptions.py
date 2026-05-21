@@ -9,6 +9,7 @@ from common.exceptions import (
     AuthorizationError,
     DoxException,
     NotFoundError,
+    QuotaExceededError,
     RateLimitError,
     ValidationError,
 )
@@ -40,6 +41,10 @@ def add_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(ValidationError)
     async def _validation_error(_req: Request, exc: ValidationError) -> JSONResponse:
         return JSONResponse(status_code=422, content=_error_body(exc))
+
+    @app.exception_handler(QuotaExceededError)
+    async def _quota_exceeded(_req: Request, exc: QuotaExceededError) -> JSONResponse:
+        return JSONResponse(status_code=429, content=_error_body(exc))
 
     @app.exception_handler(RateLimitError)
     async def _rate_limit(_req: Request, exc: RateLimitError) -> JSONResponse:

@@ -11,6 +11,7 @@ from common.exceptions import (
     AuthorizationError,
     DoxException,
     NotFoundError,
+    QuotaExceededError,
     RateLimitError,
     ValidationError,
 )
@@ -40,6 +41,10 @@ async def client() -> AsyncClient:
     @app.get("/rate-limit")
     async def _rl() -> None:
         raise RateLimitError("too many requests", retry_after=30)
+
+    @app.get("/quota-exceeded")
+    async def _qe() -> None:
+        raise QuotaExceededError("monthly limit reached")
 
     @app.get("/generic-dox")
     async def _gd() -> None:
@@ -107,6 +112,16 @@ class TestRateLimitHandler:
     async def test_body_has_rate_limit_code(self, client: AsyncClient) -> None:
         r = await client.get("/rate-limit")
         assert r.json()["error"] == "rate_limit_exceeded"
+
+
+class TestQuotaExceededHandler:
+    async def test_returns_429(self, client: AsyncClient) -> None:
+        r = await client.get("/quota-exceeded")
+        assert r.status_code == 429
+
+    async def test_body_has_quota_exceeded_code(self, client: AsyncClient) -> None:
+        r = await client.get("/quota-exceeded")
+        assert r.json()["error"] == "quota_exceeded"
 
 
 class TestGenericDoxHandler:
