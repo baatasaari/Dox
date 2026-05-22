@@ -21,6 +21,7 @@ from common.exceptions import (
 # ---------------------------------------------------------------------------
 
 _EXPECTED_PREFIXES = [
+    "/v1/audit-log",
     "/v1/auth",
     "/v1/compliance",
     "/v1/drift",

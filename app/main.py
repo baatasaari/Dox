@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from common.api import add_exception_handlers
+from services.audit.router import router as audit_log_router
 from services.auth.router import router as auth_router
 from services.compliance.router import router as compliance_router
 from services.drift.router import router as drift_router
@@ -19,6 +20,7 @@ from services.tenant.router import router as tenant_router
 from services.users.router import router as users_router
 
 _ROUTERS = [
+    audit_log_router,
     auth_router,
     compliance_router,
     drift_router,
