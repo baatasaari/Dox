@@ -5,6 +5,7 @@ description = "Agent Governance & Drift Observatory — runtime governance contr
 authors = ["Dox Team"]
 readme = "README.md"
 packages = [
+    { include = "app" },
     { include = "common" },
     { include = "services" },
 ]
@@ -44,7 +45,7 @@ build-backend = "poetry.core.masonry.api"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
-addopts = "--cov=common --cov=services --cov-report=term-missing --cov-fail-under=80"
+addopts = "--cov=app --cov=common --cov=services --cov-report=term-missing --cov-fail-under=80"
 
 [tool.ruff]
 line-length = 100
