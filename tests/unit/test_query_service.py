@@ -127,6 +127,135 @@ class TestCountEvents:
         assert count == 0
 
 
+class TestListEventsOptionalFilters:
+    async def test_session_id_filter_applied(self) -> None:
+        session = _make_session_scalars([])
+        service = EventQueryService(session)  # type: ignore[arg-type]
+        filters = EventFilter(tenant_id="t", session_id="sess-abc")
+        await service.list_events(filters)
+        session.execute.assert_awaited_once()
+
+    async def test_from_ts_filter_applied(self) -> None:
+        session = _make_session_scalars([])
+        service = EventQueryService(session)  # type: ignore[arg-type]
+        filters = EventFilter(tenant_id="t", from_ts=datetime.now(UTC))
+        await service.list_events(filters)
+        session.execute.assert_awaited_once()
+
+    async def test_to_ts_filter_applied(self) -> None:
+        session = _make_session_scalars([])
+        service = EventQueryService(session)  # type: ignore[arg-type]
+        filters = EventFilter(tenant_id="t", to_ts=datetime.now(UTC))
+        await service.list_events(filters)
+        session.execute.assert_awaited_once()
+
+    async def test_all_optional_filters_at_once(self) -> None:
+        records = [_make_record()]
+        session = _make_session_scalars(records)
+        service = EventQueryService(session)  # type: ignore[arg-type]
+        now = datetime.now(UTC)
+        filters = EventFilter(
+            tenant_id="tenant-acme",
+            agent_id="agent-1",
+            event_type=EventType.agent_started,
+            environment=Environment.dev,
+            session_id="sess-1",
+            from_ts=now,
+            to_ts=now,
+        )
+        result = await service.list_events(filters)
+        assert result == records
+
+
+class TestCountEventsFilters:
+    async def test_count_with_no_filters(self) -> None:
+        result = MagicMock()
+        result.scalar_one.return_value = 5
+        session = MagicMock()
+        session.execute = AsyncMock(return_value=result)
+        service = EventQueryService(session)  # type: ignore[arg-type]
+        count = await service.count_events(EventFilter(tenant_id="t"))
+        assert count == 5
+
+    async def test_count_with_agent_id_filter(self) -> None:
+        result = MagicMock()
+        result.scalar_one.return_value = 3
+        session = MagicMock()
+        session.execute = AsyncMock(return_value=result)
+        service = EventQueryService(session)  # type: ignore[arg-type]
+        count = await service.count_events(EventFilter(tenant_id="t", agent_id="agent-1"))
+        assert count == 3
+
+    async def test_count_with_event_type_filter(self) -> None:
+        result = MagicMock()
+        result.scalar_one.return_value = 2
+        session = MagicMock()
+        session.execute = AsyncMock(return_value=result)
+        service = EventQueryService(session)  # type: ignore[arg-type]
+        count = await service.count_events(
+            EventFilter(tenant_id="t", event_type=EventType.agent_started)
+        )
+        assert count == 2
+
+    async def test_count_with_environment_filter(self) -> None:
+        result = MagicMock()
+        result.scalar_one.return_value = 1
+        session = MagicMock()
+        session.execute = AsyncMock(return_value=result)
+        service = EventQueryService(session)  # type: ignore[arg-type]
+        count = await service.count_events(
+            EventFilter(tenant_id="t", environment=Environment.prod)
+        )
+        assert count == 1
+
+    async def test_count_with_session_id_filter(self) -> None:
+        result = MagicMock()
+        result.scalar_one.return_value = 7
+        session = MagicMock()
+        session.execute = AsyncMock(return_value=result)
+        service = EventQueryService(session)  # type: ignore[arg-type]
+        count = await service.count_events(EventFilter(tenant_id="t", session_id="sess-x"))
+        assert count == 7
+
+    async def test_count_with_from_ts_filter(self) -> None:
+        result = MagicMock()
+        result.scalar_one.return_value = 4
+        session = MagicMock()
+        session.execute = AsyncMock(return_value=result)
+        service = EventQueryService(session)  # type: ignore[arg-type]
+        count = await service.count_events(EventFilter(tenant_id="t", from_ts=datetime.now(UTC)))
+        assert count == 4
+
+    async def test_count_with_to_ts_filter(self) -> None:
+        result = MagicMock()
+        result.scalar_one.return_value = 6
+        session = MagicMock()
+        session.execute = AsyncMock(return_value=result)
+        service = EventQueryService(session)  # type: ignore[arg-type]
+        count = await service.count_events(EventFilter(tenant_id="t", to_ts=datetime.now(UTC)))
+        assert count == 6
+
+    async def test_count_with_all_filters(self) -> None:
+        result = MagicMock()
+        result.scalar_one.return_value = 0
+        session = MagicMock()
+        session.execute = AsyncMock(return_value=result)
+        service = EventQueryService(session)  # type: ignore[arg-type]
+        now = datetime.now(UTC)
+        count = await service.count_events(
+            EventFilter(
+                tenant_id="t",
+                agent_id="a",
+                event_type=EventType.tool_call_blocked,
+                environment=Environment.dev,
+                session_id="s",
+                from_ts=now,
+                to_ts=now,
+            )
+        )
+        assert count == 0
+
+
 class TestVerifyIntegrity:
     async def test_returns_integrity_report(self) -> None:
         records = [_make_record() for _ in range(3)]

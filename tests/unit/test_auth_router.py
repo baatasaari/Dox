@@ -197,3 +197,123 @@ class TestGetCurrentUserDependency:
         ) as ac:
             response = await ac.get("/secured")
         assert response.status_code == 403
+
+
+class TestRequireRoleDependency:
+    async def test_valid_role_allows_access(self) -> None:
+        from collections.abc import AsyncGenerator
+
+        from fastapi import Depends
+
+        from common.auth.deps import require_role
+        from common.auth.tokens import create_access_token
+        from common.db import get_session
+
+        user = _make_user(role="admin")
+        token = create_access_token(user.id, user.tenant_id, user.role)
+
+        app = FastAPI()
+
+        @app.get("/admin-only")
+        async def admin_route(u: User = require_role("admin")) -> dict[str, str]:
+            return {"role": u.role}
+
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = user
+        mock_session = MagicMock()
+        mock_session.execute = AsyncMock(return_value=result)
+
+        async def mock_get_session() -> AsyncGenerator[MagicMock, None]:
+            yield mock_session
+
+        app.dependency_overrides[get_session] = mock_get_session
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+            r = await ac.get("/admin-only", headers={"Authorization": f"Bearer {token}"})
+        assert r.status_code == 200
+        assert r.json()["role"] == "admin"
+
+    async def test_wrong_role_returns_403(self) -> None:
+        from collections.abc import AsyncGenerator
+
+        from common.auth.deps import require_role
+        from common.auth.tokens import create_access_token
+        from common.db import get_session
+
+        user = _make_user(role="viewer")
+        token = create_access_token(user.id, user.tenant_id, user.role)
+
+        app = FastAPI()
+
+        @app.get("/admin-only")
+        async def admin_route(u: User = require_role("admin", "operator")) -> dict[str, str]:
+            return {"ok": "yes"}
+
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = user
+        mock_session = MagicMock()
+        mock_session.execute = AsyncMock(return_value=result)
+
+        async def mock_get_session() -> AsyncGenerator[MagicMock, None]:
+            yield mock_session
+
+        app.dependency_overrides[get_session] = mock_get_session
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+            r = await ac.get("/admin-only", headers={"Authorization": f"Bearer {token}"})
+        assert r.status_code == 403
+
+    async def test_invalid_token_returns_401(self) -> None:
+        from collections.abc import AsyncGenerator
+
+        from fastapi import Depends
+
+        from common.auth.deps import get_current_user
+        from common.db import get_session
+
+        app = FastAPI()
+
+        @app.get("/protected")
+        async def protected(u: User = Depends(get_current_user)) -> dict[str, str]:
+            return {"ok": "yes"}
+
+        mock_session = MagicMock()
+        mock_session.execute = AsyncMock()
+
+        async def mock_get_session() -> AsyncGenerator[MagicMock, None]:
+            yield mock_session
+
+        app.dependency_overrides[get_session] = mock_get_session
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+            r = await ac.get("/protected", headers={"Authorization": "Bearer not.a.valid.jwt"})
+        assert r.status_code == 401
+
+    async def test_user_not_found_returns_401(self) -> None:
+        from collections.abc import AsyncGenerator
+
+        from fastapi import Depends
+
+        from common.auth.deps import get_current_user
+        from common.auth.tokens import create_access_token
+        from common.db import get_session
+
+        user = _make_user()
+        token = create_access_token(user.id, user.tenant_id, user.role)
+
+        app = FastAPI()
+
+        @app.get("/protected")
+        async def protected(u: User = Depends(get_current_user)) -> dict[str, str]:
+            return {"ok": "yes"}
+
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = None  # user not in DB
+
+        mock_session = MagicMock()
+        mock_session.execute = AsyncMock(return_value=result)
+
+        async def mock_get_session() -> AsyncGenerator[MagicMock, None]:
+            yield mock_session
+
+        app.dependency_overrides[get_session] = mock_get_session
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+            r = await ac.get("/protected", headers={"Authorization": f"Bearer {token}"})
+        assert r.status_code == 401
