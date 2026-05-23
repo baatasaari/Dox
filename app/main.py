@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from common.api import add_exception_handlers
 from common.auth.dependencies import require_role
 from common.schemas.enums import UserRole
+from common.tracing_middleware import TracingMiddleware
 from services.audit.router import router as audit_log_router
 from services.auth.router import router as auth_router
 from services.compliance.router import router as compliance_router
@@ -74,6 +75,7 @@ def create_app(*, cors_origins: list[str] | None = None) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.add_middleware(TracingMiddleware)
 
     add_exception_handlers(app)
 
