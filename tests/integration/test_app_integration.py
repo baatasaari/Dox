@@ -10,6 +10,8 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.main import create_app
+from common.auth.dependencies import get_current_user
+from common.auth.tokens import TokenPayload
 from common.exceptions import ConflictError, NotFoundError
 from common.models.tenant import Tenant
 from common.models.user import User
@@ -27,6 +29,10 @@ from services.tenant.deps import get_tenant_service
 from services.tenant.service import TenantService
 from services.users.deps import get_user_service
 from services.users.service import UserService
+
+
+def _admin_token() -> TokenPayload:
+    return TokenPayload(sub=str(uuid4()), tenant_id="acme", role="admin", exp=9_999_999_999)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -128,6 +134,7 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
     app.dependency_overrides[get_user_service] = lambda: user_svc
     app.dependency_overrides[get_tenant_service] = lambda: tenant_svc
     app.dependency_overrides[get_compliance_service] = lambda: compliance_svc
+    app.dependency_overrides[get_current_user] = _admin_token
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
@@ -164,6 +171,7 @@ class TestUserFlowThroughApp:
         conflict_svc = _mock_user_service()
         conflict_svc.create = AsyncMock(side_effect=ConflictError("dup"))
         app.dependency_overrides[get_user_service] = lambda: conflict_svc
+        app.dependency_overrides[get_current_user] = _admin_token
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
             r = await ac.post(
@@ -220,6 +228,7 @@ class TestTenantFlowThroughApp:
         missing_svc = _mock_tenant_service()
         missing_svc.get = AsyncMock(side_effect=NotFoundError("nope"))
         app.dependency_overrides[get_tenant_service] = lambda: missing_svc
+        app.dependency_overrides[get_current_user] = _admin_token
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
             r = await ac.get(f"/v1/tenants/{uuid4()}")
@@ -264,6 +273,7 @@ class TestCrossServiceFlowThroughApp:
         broken_svc = _mock_user_service()
         broken_svc.list_for_tenant = AsyncMock(side_effect=RuntimeError("db down"))
         app.dependency_overrides[get_user_service] = lambda: broken_svc
+        app.dependency_overrides[get_current_user] = _admin_token
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
             health = await ac.get("/healthz")

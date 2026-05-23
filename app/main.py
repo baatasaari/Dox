@@ -5,6 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from common.api import add_exception_handlers
+from common.auth.dependencies import require_role
+from common.schemas.enums import UserRole
 from services.audit.router import router as audit_log_router
 from services.auth.router import router as auth_router
 from services.compliance.router import router as compliance_router
@@ -19,20 +21,28 @@ from services.sentinel.router import router as sentinel_router
 from services.tenant.router import router as tenant_router
 from services.users.router import router as users_router
 
-_ROUTERS = [
-    audit_log_router,
-    auth_router,
-    compliance_router,
-    drift_router,
-    ingestion_router,
-    notify_router,
-    policy_router,
-    query_router,
-    quota_router,
-    registry_router,
-    sentinel_router,
-    tenant_router,
-    users_router,
+# ---------------------------------------------------------------------------
+# Role-access matrix: maps each router to its minimum required roles.
+# auth_router is public (no entry here).
+# ---------------------------------------------------------------------------
+_ANY_AUTHENTICATED = [UserRole.agent, UserRole.viewer, UserRole.operator, UserRole.admin]
+_OPERATOR_PLUS = [UserRole.operator, UserRole.admin]
+_ADMIN_ONLY = [UserRole.admin]
+
+_SECURED_ROUTERS = [
+    # (router, allowed_roles)
+    (audit_log_router, [UserRole.viewer, UserRole.operator, UserRole.admin]),
+    (compliance_router, [UserRole.viewer, UserRole.operator, UserRole.admin]),
+    (drift_router, [UserRole.viewer, UserRole.operator, UserRole.admin]),
+    (ingestion_router, [UserRole.agent, UserRole.operator, UserRole.admin]),
+    (notify_router, _OPERATOR_PLUS),
+    (policy_router, _OPERATOR_PLUS),
+    (query_router, [UserRole.viewer, UserRole.operator, UserRole.admin]),
+    (quota_router, [UserRole.viewer, UserRole.operator, UserRole.admin]),
+    (registry_router, _ANY_AUTHENTICATED),
+    (sentinel_router, [UserRole.viewer, UserRole.operator, UserRole.admin]),
+    (tenant_router, _ADMIN_ONLY),
+    (users_router, _ADMIN_ONLY),
 ]
 
 _DESCRIPTION = """\
@@ -67,8 +77,12 @@ def create_app(*, cors_origins: list[str] | None = None) -> FastAPI:
 
     add_exception_handlers(app)
 
-    for router in _ROUTERS:
-        app.include_router(router)
+    # Auth endpoint is public — no JWT required.
+    app.include_router(auth_router)
+
+    # All other routers require a valid JWT with appropriate role.
+    for router, roles in _SECURED_ROUTERS:
+        app.include_router(router, dependencies=[require_role(*roles)])
 
     @app.get("/healthz", tags=["ops"], include_in_schema=False)
     async def health() -> dict[str, str]:
