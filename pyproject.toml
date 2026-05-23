@@ -7,6 +7,7 @@ readme = "README.md"
 packages = [
     { include = "app" },
     { include = "common" },
+    { include = "dox_sdk", from = "sdk/python" },
     { include = "services" },
 ]
 
@@ -45,7 +46,7 @@ build-backend = "poetry.core.masonry.api"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
-addopts = "--cov=app --cov=common --cov=services --cov-report=term-missing --cov-fail-under=80"
+addopts = "--cov=app --cov=common --cov=dox_sdk --cov=services --cov-report=term-missing --cov-fail-under=80"
 
 [tool.ruff]
 line-length = 100
