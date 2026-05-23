@@ -8,6 +8,7 @@ packages = [
     { include = "app" },
     { include = "common" },
     { include = "dox_sdk", from = "sdk/python" },
+    { include = "langgraph_workflows" },
     { include = "services" },
 ]
 
@@ -28,6 +29,7 @@ structlog = "25.3.0"
 opentelemetry-sdk = "1.33.1"
 opentelemetry-api = "1.33.1"
 langgraph = "0.4.8"
+langgraph-checkpoint = "2.1.2"
 langchain-core = "0.3.63"
 
 [tool.poetry.group.dev.dependencies]
@@ -46,7 +48,7 @@ build-backend = "poetry.core.masonry.api"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
-addopts = "--cov=app --cov=common --cov=dox_sdk --cov=services --cov-report=term-missing --cov-fail-under=80"
+addopts = "--cov=app --cov=common --cov=dox_sdk --cov=langgraph_workflows --cov=services --cov-report=term-missing --cov-fail-under=80"
 
 [tool.ruff]
 line-length = 100
