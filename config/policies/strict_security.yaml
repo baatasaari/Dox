@@ -1,0 +1,48 @@
+---
+# Strict security policies for Dox.
+# These policies are applied to high-assurance deployments where regulatory
+# compliance or elevated risk tolerance requires aggressive intervention.
+
+policies:
+  - name: Delegation Isolation
+    description: >
+      Isolate an agent immediately when it attempts unauthorised delegation to a
+      sub-agent or third-party service that is not on the approved allow-list.
+      Prevents lateral movement within multi-agent systems.
+    sentinel_type: delegation
+    severity: critical
+    action: isolate_agent
+    config:
+      allowlist: []
+      audit_on_block: true
+
+  - name: Bias Rollback
+    description: >
+      Roll back any memory write that is detected as introducing or reinforcing
+      biased representations. Protects long-lived agent memory from persistent
+      demographic or ideological drift.
+    sentinel_type: bias
+    severity: high
+    action: rollback_memory_write
+    config:
+      bias_categories:
+        - demographic
+        - ideological
+        - confirmation
+      confidence_threshold: 0.8
+
+  - name: Regulatory Violation Termination
+    description: >
+      Terminate execution immediately when a regulatory policy violation is
+      detected, such as processing regulated data without consent, violating
+      data residency requirements, or breaching sector-specific rules (GDPR,
+      HIPAA, FCA).
+    sentinel_type: regulatory
+    severity: critical
+    action: terminate_execution
+    config:
+      frameworks:
+        - GDPR
+        - HIPAA
+        - FCA
+      notify_compliance_team: true

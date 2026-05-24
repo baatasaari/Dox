@@ -31,6 +31,7 @@ opentelemetry-api = "1.33.1"
 langgraph = "0.4.8"
 langgraph-checkpoint = "2.1.2"
 langchain-core = "0.3.63"
+types-pyyaml = "^6.0.12.20260518"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "8.3.5"

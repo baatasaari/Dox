@@ -201,9 +201,7 @@ class TestGetCurrentUserDependency:
 
 class TestRequireRoleDependency:
     async def test_valid_role_allows_access(self) -> None:
-        from collections.abc import AsyncGenerator
 
-        from fastapi import Depends
 
         from common.auth.deps import require_role
         from common.auth.tokens import create_access_token
@@ -233,7 +231,6 @@ class TestRequireRoleDependency:
         assert r.json()["role"] == "admin"
 
     async def test_wrong_role_returns_403(self) -> None:
-        from collections.abc import AsyncGenerator
 
         from common.auth.deps import require_role
         from common.auth.tokens import create_access_token
@@ -262,7 +259,6 @@ class TestRequireRoleDependency:
         assert r.status_code == 403
 
     async def test_invalid_token_returns_401(self) -> None:
-        from collections.abc import AsyncGenerator
 
         from fastapi import Depends
 
@@ -287,7 +283,6 @@ class TestRequireRoleDependency:
         assert r.status_code == 401
 
     async def test_user_not_found_returns_401(self) -> None:
-        from collections.abc import AsyncGenerator
 
         from fastapi import Depends
 
