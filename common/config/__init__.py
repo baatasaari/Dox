@@ -19,6 +19,7 @@ class RedisSettings(BaseModel):
 class AdapterSettings(BaseModel):
     event_bus: str = "redis_streams"
     object_store: str = "local_fs"
+    local_fs_path: str = "local_fs_store"
     secret_store: str = "env"
     metrics: str = "prometheus"
 
@@ -33,6 +34,11 @@ class RetentionSettings(BaseModel):
     warm_days: int = 90
     cold_days: int = 365
     delete_after_days: int = 730
+
+
+class AuthSettings(BaseModel):
+    access_token_expire_minutes: int = 30
+    algorithm: str = "HS256"
 
 
 class PlatformSettings(BaseModel):
@@ -53,6 +59,7 @@ class Settings(BaseSettings):
     database: DatabaseSettings
     redis: RedisSettings = RedisSettings()
     adapters: AdapterSettings = AdapterSettings()
+    auth: AuthSettings = AuthSettings()
     sentinel: SentinelSettings = SentinelSettings()
     retention: RetentionSettings = RetentionSettings()
     platform: PlatformSettings = PlatformSettings()

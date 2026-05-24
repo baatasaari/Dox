@@ -48,3 +48,8 @@ class EntitlementError(DoxException):
     def __init__(self, detail: str, feature: str = "") -> None:
         super().__init__(detail=detail, code="feature_not_available")
         self.feature = feature
+
+
+class ConflictError(DoxException):
+    def __init__(self, detail: str) -> None:
+        super().__init__(detail=detail, code="conflict")

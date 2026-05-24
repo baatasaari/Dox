@@ -1,0 +1,62 @@
+---
+# Default governance policies for Dox.
+# These policies cover common AI agent safety scenarios and apply to all tenants
+# that have not configured a stricter policy set.
+
+policies:
+  - name: Tool Misuse Warning
+    description: >
+      Warn when an agent attempts to use a tool in an unexpected or potentially
+      harmful manner. Logs the event for operator review without blocking execution.
+    sentinel_type: tool_misuse
+    severity: medium
+    action: warn
+    config:
+      max_consecutive_misuse: 3
+      log_payload: true
+
+  - name: Prompt Injection Termination
+    description: >
+      Terminate execution immediately when a prompt injection attack is detected.
+      Injected instructions from untrusted data sources must not be allowed to
+      alter agent behaviour.
+    sentinel_type: injection
+    severity: critical
+    action: terminate_execution
+    config:
+      patterns:
+        - "ignore previous instructions"
+        - "disregard your system prompt"
+      strict_mode: true
+
+  - name: Trajectory Human Review
+    description: >
+      Request human review when the agent trajectory deviates significantly from
+      the expected task path, indicating potential goal misalignment.
+    sentinel_type: trajectory
+    severity: high
+    action: request_human_review
+    config:
+      deviation_threshold: 0.7
+      window_steps: 10
+
+  - name: Cost Loop Pause
+    description: >
+      Pause the agent when a cost loop is detected — repeated, expensive tool
+      calls that do not make forward progress on the assigned task.
+    sentinel_type: cost_loop
+    severity: high
+    action: pause_agent
+    config:
+      max_loop_iterations: 5
+      cost_threshold_usd: 2.0
+
+  - name: Hallucination Warning
+    description: >
+      Emit a warning when the model produces output that contradicts verified
+      context or cites non-existent sources. Downstream consumers should treat
+      flagged responses with elevated scepticism.
+    sentinel_type: hallucination
+    severity: medium
+    action: warn
+    config: {}
