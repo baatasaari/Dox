@@ -1,11 +1,17 @@
 """Dox unified gateway — assembles all service routers into a single FastAPI application."""
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from common.adapters import AdapterRegistry
 from common.api import add_exception_handlers
 from common.auth.dependencies import require_role
+from common.config import settings
+from common.db import close_db, init_db
 from common.schemas.enums import UserRole
 from common.tracing_middleware import TracingMiddleware
 from services.audit.router import router as audit_log_router
@@ -59,9 +65,20 @@ It provides:
 """
 
 
+@asynccontextmanager
+async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    await init_db()
+    registry = AdapterRegistry(settings)
+    app.state.registry = registry
+    yield
+    await registry.close()
+    await close_db()
+
+
 def create_app(*, cors_origins: list[str] | None = None) -> FastAPI:
     app = FastAPI(
         title="Dox — Agent Governance & Drift Observatory",
+        lifespan=_lifespan,
         description=_DESCRIPTION,
         version="0.1.0",
         contact={"name": "Dox Platform", "url": "https://github.com/baatasaari/dox"},
