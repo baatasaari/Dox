@@ -1,0 +1,27 @@
+meta {
+  name: Resolve Alert
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/v1/sentinel/alerts/{{alertId}}/resolve
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "action": "warn"
+  }
+}
+
+docs {
+  action: allow, warn, redact, block_tool_call, pause_agent,
+          request_human_review, force_safe_response,
+          rollback_memory_write, isolate_agent, terminate_execution
+}

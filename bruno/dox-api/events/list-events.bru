@@ -1,0 +1,21 @@
+meta {
+  name: List Events
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/v1/events
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+params:query {
+  tenant_id: {{tenantId}}
+  limit: 20
+  offset: 0
+}

@@ -1,0 +1,35 @@
+meta {
+  name: Register Webhook
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/notify/webhooks
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "tenant_id": "{{tenantId}}",
+    "url": "https://hooks.example.com/dox-alerts",
+    "secret": "my-webhook-signing-secret",
+    "event_types": [
+      "sentinel_alert_created",
+      "policy_failed",
+      "agent_terminated"
+    ],
+    "description": "Slack bridge for critical governance alerts"
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar("webhookId", res.body.id);
+  }
+}

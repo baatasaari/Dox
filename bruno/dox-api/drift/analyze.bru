@@ -1,0 +1,28 @@
+meta {
+  name: Analyze Drift
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/drift/analyze
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "tenant_id": "{{tenantId}}",
+    "agent_id": "{{agentId}}",
+    "lookback_hours": 24
+  }
+}
+
+docs {
+  Compares recent event-type distribution against the stored baseline.
+  Returns deviations with baseline_freq vs recent_freq and delta.
+}

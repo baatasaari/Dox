@@ -1,0 +1,28 @@
+meta {
+  name: Create Tenant
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/tenants
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "Acme Corp",
+    "slug": "acme"
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar("tenantId", res.body.id);
+  }
+}

@@ -1,0 +1,44 @@
+meta {
+  name: Create Policy
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/sentinel/policies
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "tenant_id": "{{tenantId}}",
+    "name": "Tool Misuse Warning",
+    "sentinel_type": "tool_misuse",
+    "severity": "medium",
+    "action": "warn",
+    "config": {"threshold": 3},
+    "is_active": true
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar("policyId", res.body.id);
+  }
+}
+
+docs {
+  sentinel_type: trajectory, tool_misuse, policy_breach, memory, drift,
+                 injection, cost_loop, delegation, bias, hallucination, regulatory
+
+  severity: low, medium, high, critical
+
+  action: allow, warn, redact, block_tool_call, pause_agent,
+          request_human_review, force_safe_response,
+          rollback_memory_write, isolate_agent, terminate_execution
+}

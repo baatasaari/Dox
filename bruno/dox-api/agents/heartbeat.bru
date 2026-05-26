@@ -1,0 +1,25 @@
+meta {
+  name: Heartbeat
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/v1/agents/{{tenantId}}/{{agentId}}/heartbeat
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "status": "running",
+    "metadata": {
+      "tasks_completed": 42,
+      "memory_mb": 384
+    }
+  }
+}

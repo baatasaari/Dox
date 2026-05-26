@@ -1,0 +1,33 @@
+meta {
+  name: Register Agent
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/agents
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "tenant_id": "{{tenantId}}",
+    "agent_id": "{{agentId}}",
+    "name": "Research Agent",
+    "description": "Web research and summarisation agent",
+    "version": "1.0.0",
+    "capabilities": ["web_search", "summarise", "tool_use"],
+    "metadata": {"model": "claude-sonnet-4-6", "owner": "ml-team"}
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar("profileId", res.body.id);
+  }
+}

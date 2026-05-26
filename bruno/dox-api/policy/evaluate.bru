@@ -1,0 +1,33 @@
+meta {
+  name: Evaluate Policies
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/policies/evaluate
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "tenant_id": "{{tenantId}}",
+    "agent_id": "{{agentId}}",
+    "sentinel_type": "tool_misuse",
+    "severity": "high",
+    "payload": {
+      "tool": "file_write",
+      "path": "/etc/passwd"
+    }
+  }
+}
+
+docs {
+  Returns matched_policies and the winning action.
+  is_blocked=true if the winning action is terminate_execution.
+}

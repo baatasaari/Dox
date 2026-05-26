@@ -1,0 +1,15 @@
+meta {
+  name: Get Quota Status
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/quota/{{tenantId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

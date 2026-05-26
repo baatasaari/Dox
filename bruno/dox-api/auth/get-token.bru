@@ -1,0 +1,29 @@
+meta {
+  name: Get Token
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/auth/token
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "admin@example.com",
+    "password": "secret"
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar("token", res.body.access_token);
+  }
+}
+
+docs {
+  Returns a HS256 JWT valid for 30 minutes.
+  The post-response script saves the token into {{token}} automatically.
+}

@@ -1,0 +1,36 @@
+meta {
+  name: Create Alert
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/v1/sentinel/alerts
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "tenant_id": "{{tenantId}}",
+    "agent_id": "{{agentId}}",
+    "sentinel_type": "tool_misuse",
+    "severity": "high",
+    "message": "Agent attempted to write to a system path",
+    "details": {
+      "tool": "file_write",
+      "path": "/etc/passwd"
+    },
+    "event_id": "{{eventId}}"
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar("alertId", res.body.id);
+  }
+}

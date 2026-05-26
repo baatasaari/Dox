@@ -1,0 +1,23 @@
+meta {
+  name: Provision Quota
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/v1/quota
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "tenant_id": "{{tenantId}}",
+    "daily_limit": 5000,
+    "monthly_limit": 100000
+  }
+}

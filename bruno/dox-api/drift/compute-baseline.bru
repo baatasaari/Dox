@@ -1,0 +1,29 @@
+meta {
+  name: Compute Baseline
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/v1/drift/baselines
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "tenant_id": "{{tenantId}}",
+    "agent_id": "{{agentId}}",
+    "lookback_hours": 168
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar("baselineId", res.body.id);
+  }
+}

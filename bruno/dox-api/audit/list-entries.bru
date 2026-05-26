@@ -1,0 +1,20 @@
+meta {
+  name: List Audit Entries
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/audit-log/{{tenantId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+params:query {
+  limit: 20
+  offset: 0
+}

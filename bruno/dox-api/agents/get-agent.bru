@@ -1,0 +1,15 @@
+meta {
+  name: Get Agent
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/v1/agents/{{profileId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

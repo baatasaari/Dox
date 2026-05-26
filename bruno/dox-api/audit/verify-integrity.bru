@@ -1,0 +1,24 @@
+meta {
+  name: Verify Audit Integrity
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/v1/audit/verify
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+params:query {
+  tenant_id: {{tenantId}}
+}
+
+docs {
+  Verifies the hash chain of audit entries has not been tampered with.
+  Returns is_valid=true if all hashes link correctly.
+}

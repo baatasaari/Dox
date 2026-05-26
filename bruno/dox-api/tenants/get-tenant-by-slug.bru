@@ -1,0 +1,15 @@
+meta {
+  name: Get Tenant by Slug
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/v1/tenants/by-slug/demo
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

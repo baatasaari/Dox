@@ -1,0 +1,28 @@
+meta {
+  name: Dispatch Notification
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/v1/notify/dispatch
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "tenant_id": "{{tenantId}}",
+    "event_type": "sentinel_alert_created",
+    "payload": {
+      "alert_id": "{{alertId}}",
+      "sentinel_type": "tool_misuse",
+      "severity": "high",
+      "message": "Agent attempted to write to /etc/passwd"
+    }
+  }
+}

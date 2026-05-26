@@ -1,0 +1,27 @@
+meta {
+  name: Get Compliance Report
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/compliance/{{tenantId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+params:query {
+  lookback_hours: 24
+}
+
+docs {
+  Returns a unified governance report:
+  - event counts by type
+  - alert counts by severity and sentinel_type
+  - quota status
+  - active policy count
+}

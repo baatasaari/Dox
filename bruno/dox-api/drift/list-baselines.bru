@@ -1,0 +1,20 @@
+meta {
+  name: List Baselines
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/v1/drift/baselines
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+params:query {
+  tenant_id: {{tenantId}}
+  agent_id: {{agentId}}
+}

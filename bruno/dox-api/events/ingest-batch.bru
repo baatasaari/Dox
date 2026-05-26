@@ -1,0 +1,70 @@
+meta {
+  name: Ingest Batch
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/v1/events/batch
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "events": [
+      {
+        "event_id": "00000000-0000-0000-0000-000000000010",
+        "schema_version": "1.0",
+        "trace_id": "00000000-0000-0000-0000-aaaaaaaaaaaa",
+        "session_id": "00000000-0000-0000-0000-bbbbbbbbbbbb",
+        "correlation_id": "00000000-0000-0000-0000-cccccccccccc",
+        "tenant_id": "{{tenantId}}",
+        "agent_id": "{{agentId}}",
+        "agent_version": "1.0.0",
+        "event_type": "agent_started",
+        "environment": "prod",
+        "timestamp": "2026-01-01T12:00:00Z",
+        "client_timestamp": "2026-01-01T12:00:00Z",
+        "payload": {"task": "quarterly-report"},
+        "tags": {}
+      },
+      {
+        "event_id": "00000000-0000-0000-0000-000000000011",
+        "schema_version": "1.0",
+        "trace_id": "00000000-0000-0000-0000-aaaaaaaaaaaa",
+        "session_id": "00000000-0000-0000-0000-bbbbbbbbbbbb",
+        "correlation_id": "00000000-0000-0000-0000-cccccccccccc",
+        "tenant_id": "{{tenantId}}",
+        "agent_id": "{{agentId}}",
+        "agent_version": "1.0.0",
+        "event_type": "tool_call_blocked",
+        "environment": "prod",
+        "timestamp": "2026-01-01T12:00:05Z",
+        "client_timestamp": "2026-01-01T12:00:05Z",
+        "payload": {"tool": "file_write", "path": "/etc/passwd", "reason": "policy_violation"},
+        "tags": {"risk": "high"}
+      },
+      {
+        "event_id": "00000000-0000-0000-0000-000000000012",
+        "schema_version": "1.0",
+        "trace_id": "00000000-0000-0000-0000-aaaaaaaaaaaa",
+        "session_id": "00000000-0000-0000-0000-bbbbbbbbbbbb",
+        "correlation_id": "00000000-0000-0000-0000-cccccccccccc",
+        "tenant_id": "{{tenantId}}",
+        "agent_id": "{{agentId}}",
+        "agent_version": "1.0.0",
+        "event_type": "agent_completed",
+        "environment": "prod",
+        "timestamp": "2026-01-01T12:01:00Z",
+        "client_timestamp": "2026-01-01T12:01:00Z",
+        "payload": {"status": "success", "duration_s": 55},
+        "tags": {}
+      }
+    ]
+  }
+}
