@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dox — Agent Governance & Drift Observatory</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --navy:   #0a0e1a;
+    --dark:   #0f1628;
+    --card:   #141c32;
+    --border: #1e2d50;
+    --accent: #2563eb;
+    --accent2: #7c3aed;
+    --teal:   #0d9488;
+    --amber:  #d97706;
+    --red:    #dc2626;
+    --green:  #16a34a;
+    --text:   #e2e8f0;
+    --muted:  #64748b;
+    --white:  #ffffff;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--navy);
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  /* ── Navigation ── */
+  #nav {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(20,28,50,0.95);
+    border: 1px solid var(--border);
+    border-radius: 3rem;
+    padding: .6rem 1.4rem;
+    backdrop-filter: blur(12px);
+    z-index: 1000;
+  }
+  #nav button {
+    background: none;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: .3rem .6rem;
+    border-radius: .5rem;
+    transition: background .2s;
+  }
+  #nav button:hover { background: var(--border); }
+  #nav button:disabled { opacity: .3; cursor: default; }
+  #slide-counter { font-size: .8rem; color: var(--muted); min-width: 4rem; text-align: center; }
+  #progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width .4s ease;
+    z-index: 1000;
+  }
+
+  /* ── Slides ── */
+  .slide {
+    display: none;
+    position: absolute;
+    inset: 0;
+    padding: 3.5rem 5rem;
+    animation: fadeIn .35s ease;
+    overflow-y: auto;
+  }
+  .slide.active { display: flex; flex-direction: column; justify-content: center; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── Typography ── */
+  .eyebrow {
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: .75rem;
+  }
+  h1 { font-size: 3.6rem; font-weight: 800; line-height: 1.1; color: var(--white); }
+  h2 { font-size: 2.4rem; font-weight: 700; line-height: 1.2; color: var(--white); margin-bottom: 1.5rem; }
+  h3 { font-size: 1.1rem; font-weight: 600; color: var(--white); margin-bottom: .5rem; }
+  p  { line-height: 1.7; color: var(--text); }
+  .tagline { font-size: 1.25rem; color: #94a3b8; margin-top: 1rem; max-width: 60rem; }
+  .label { font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: .25rem; }
+
+  /* ── Layout helpers ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem; }
+  .four-col { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 1.75rem;
+  }
+  .card.accent-border { border-left: 3px solid var(--accent); }
+  .card.red-border    { border-left: 3px solid var(--red); }
+  .card.green-border  { border-left: 3px solid var(--green); }
+  .card.amber-border  { border-left: 3px solid var(--amber); }
+  .card.teal-border   { border-left: 3px solid var(--teal); }
+  .card.purple-border { border-left: 3px solid var(--accent2); }
+
+  /* ── Stat blocks ── */
+  .stat { text-align: center; }
+  .stat .number {
+    font-size: 3rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+  .stat .number.red  { background: linear-gradient(135deg, #dc2626, #f97316); -webkit-background-clip: text; background-clip: text; }
+  .stat .number.green{ background: linear-gradient(135deg, #16a34a, #0d9488); -webkit-background-clip: text; background-clip: text; }
+  .stat .unit { font-size: .85rem; color: var(--muted); margin-top: .3rem; }
+  .stat .desc { font-size: .8rem; color: var(--muted); margin-top: .5rem; line-height: 1.4; }
+
+  /* ── Timeline ── */
+  .timeline { display: flex; gap: 0; }
+  .tl-item {
+    flex: 1;
+    padding: 1rem 1.25rem;
+    background: var(--card);
+    border-top: 3px solid var(--border);
+    border-right: 1px solid var(--border);
+    position: relative;
+  }
+  .tl-item:first-child { border-radius: .5rem 0 0 .5rem; }
+  .tl-item:last-child  { border-radius: 0 .5rem .5rem 0; border-right: none; }
+  .tl-item.active-q { border-top-color: var(--accent); }
+  .tl-date { font-size: .7rem; color: var(--accent); font-weight: 700; letter-spacing: .05em; margin-bottom: .3rem; }
+  .tl-text { font-size: .8rem; color: var(--text); }
+
+  /* ── Risk items ── */
+  .risk-item {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding: 1rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    margin-bottom: .75rem;
+  }
+  .risk-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: .5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  /* ── Badge ── */
+  .badge {
+    display: inline-block;
+    padding: .2rem .65rem;
+    border-radius: 2rem;
+    font-size: .7rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+  }
+  .badge.red    { background: rgba(220,38,38,.15); color: #fca5a5; border: 1px solid rgba(220,38,38,.3); }
+  .badge.green  { background: rgba(22,163,74,.15);  color: #86efac; border: 1px solid rgba(22,163,74,.3); }
+  .badge.blue   { background: rgba(37,99,235,.15);  color: #93c5fd; border: 1px solid rgba(37,99,235,.3); }
+  .badge.amber  { background: rgba(217,119,6,.15);  color: #fcd34d; border: 1px solid rgba(217,119,6,.3); }
+  .badge.purple { background: rgba(124,58,237,.15); color: #c4b5fd; border: 1px solid rgba(124,58,237,.3); }
+
+  /* ── Feature pill ── */
+  .pill {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .5rem .9rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 2rem;
+    font-size: .82rem;
+    margin-bottom: .5rem;
+  }
+  .pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  .pill .dot.green  { background: var(--green); }
+  .pill .dot.amber  { background: var(--amber); }
+  .pill .dot.purple { background: var(--accent2); }
+  .pill .dot.teal   { background: var(--teal); }
+
+  /* ── Comparison table ── */
+  .comp-table { width: 100%; border-collapse: collapse; }
+  .comp-table th, .comp-table td {
+    padding: .75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-size: .85rem;
+  }
+  .comp-table th { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .comp-table tr:last-child td { border-bottom: none; }
+  .comp-table td:first-child { font-weight: 600; color: var(--white); }
+  .check { color: var(--green); }
+  .cross { color: var(--red); }
+  .partial { color: var(--amber); }
+
+  /* ── Gradient text ── */
+  .grad { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .grad-red { background: linear-gradient(135deg, #dc2626, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+  /* ── Slide-specific ── */
+  #slide-1 {
+    background:
+      radial-gradient(ellipse 80% 60% at 70% 40%, rgba(37,99,235,.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 20% 80%, rgba(124,58,237,.08) 0%, transparent 60%),
+      var(--navy);
+  }
+  .logo-mark {
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 3rem;
+  }
+
+  .divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
+  .footnote { font-size: .72rem; color: var(--muted); margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: .75rem; }
+
+  /* ── CTA slide ── */
+  #slide-13 {
+    background:
+      radial-gradient(ellipse 70% 70% at 50% 50%, rgba(37,99,235,.15) 0%, transparent 70%),
+      var(--navy);
+    text-align: center;
+    align-items: center;
+  }
+
+  .big-quote {
+    font-size: 1.5rem;
+    font-style: italic;
+    color: #94a3b8;
+    max-width: 50rem;
+    line-height: 1.6;
+    margin: 1.5rem auto;
+  }
+
+  .pricing-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 1.25rem;
+    padding: 2rem;
+    position: relative;
+  }
+  .pricing-card.featured {
+    border-color: var(--accent);
+    box-shadow: 0 0 40px rgba(37,99,235,.15);
+  }
+  .pricing-card .featured-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: white;
+    font-size: .7rem;
+    font-weight: 700;
+    padding: .2rem .8rem;
+    border-radius: 2rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+  .price { font-size: 2.2rem; font-weight: 800; color: var(--white); }
+  .price-unit { font-size: .8rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE 1 — TITLE
+═══════════════════════════════════════════════════════════ -->
+<div class="slide active" id="slide-1">
+  <div class="logo-mark">Dox</div>
+  <div class="eyebrow">Confidential · Executive Briefing · 2026</div>
+  <h1>Govern Your AI Agents<br><span class="grad">Before They Govern You</span></h1>
+  <p class="tagline">
+    Dox is the runtime governance control plane for agentic AI —<br>
+    real-time oversight, policy enforcement, and compliance reporting<br>
+    across every agent your organisation deploys.
+  </p>
+  <div style="margin-top:3rem; display:flex; gap:2rem;">
+    <div>
+      <div class="label">Category</div>
+      <div style="font-weight:600;">AI Agent Governance</div>
+    </div>
+    <div>
+      <div class="label">Stage</div>
+      <div style="font-weight:600;">GA · Production Ready</div>
+    </div>
+    <div>
+      <div class="label">Deployment</div>
+      <div style="font-weight:600;">Cloud-Agnostic · On-Prem / SaaS</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE 2 — THE PROBLEM
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-2">
+  <div class="eyebrow">The Problem</div>
+  <h2>AI Agents Are Deployed at Scale.<br>Governance Is Not.</h2>
+
+  <div class="two-col" style="margin-top:1.5rem; align-items:start;">
+    <div>
+      <div class="risk-item">
+        <div class="risk-icon" style="background:rgba(220,38,38,.15);">💸</div>
+        <div>
+          <h3>Cost Runaway</h3>
+          <p style="font-size:.85rem;">A multi-agent research tool looped undetected for 11 days, generating a <strong>$47,000 AWS bill</strong>. Enterprise teams are spending 13× more on AI tokens than a year ago.</p>
+        </div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-icon" style="background:rgba(217,119,6,.15);">🎯</div>
+        <div>
+          <h3>Prompt Injection Attacks</h3>
+          <p style="font-size:.85rem;"><strong>73% of production deployments</strong> contain prompt injection vulnerabilities. Losses hit <strong>$2.3B globally in 2025</strong>. A single malicious document can hijack your agent mid-task.</p>
+        </div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-icon" style="background:rgba(124,58,237,.15);">🌀</div>
+        <div>
+          <h3>Silent Behavioural Drift</h3>
+          <p style="font-size:.85rem;">Agents change behaviour as models update, prompts drift, and context shifts — with no telemetry to detect it until damage is done.</p>
+        </div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-icon" style="background:rgba(13,148,136,.15);">⚖️</div>
+        <div>
+          <h3>Regulatory Blindspot</h3>
+          <p style="font-size:.85rem;">The EU AI Act is now enforced. SEC AI disclosure scrutiny is active. Organisations face fines up to <strong>€35M or 7% of global turnover</strong> — with no audit trail to defend themselves.</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:1.5rem;">
+      <div class="card" style="text-align:center; padding:2rem;">
+        <div class="stat">
+          <div class="number red">40%</div>
+          <div class="unit">of AI agent initiatives</div>
+          <div class="desc">projected to be abandoned by 2027<br>due to cost, drift, and compliance failures</div>
+        </div>
+      </div>
+      <div class="card" style="text-align:center; padding:2rem;">
+        <div class="stat">
+          <div class="number red">$670K</div>
+          <div class="unit">avg. cost added per breach</div>
+          <div class="desc">when unsanctioned AI tools leak customer PII<br><em>IBM Cost of a Data Breach Report</em></div>
+        </div>
+      </div>
+      <div class="card" style="text-align:center; padding:2rem;">
+        <div class="stat">
+          <div class="number red">23%</div>
+          <div class="unit">detection rate</div>
+          <div class="desc">of sophisticated prompt injection attempts<br>caught by current methods</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footnote">Sources: Gartner 2026 · IBM Cost of Data Breach · Unit 42 · AI Incidents Retrospective H1 2026</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE 3 — MARKET OPPORTUNITY
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-3">
+  <div class="eyebrow">Market Opportunity</div>
+  <h2>A Billion-Dollar Category<br>That Didn't Exist Two Years Ago</h2>
+
+  <div class="four-col" style="margin-top:1.5rem;">
+    <div class="card" style="text-align:center;">
+      <div class="stat">
+        <div class="number">$492M</div>
+        <div class="unit">AI Governance Market 2026</div>
+        <div class="desc">Growing to >$1B by 2030<br><em>Gartner, Feb 2026</em></div>
+      </div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div class="stat">
+        <div class="number">44%</div>
+        <div class="unit">Market CAGR through 2030</div>
+        <div class="desc">AI agent platform spend<br><em>IDC / Gartner 2025–2030</em></div>
+      </div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div class="stat">
+        <div class="number">40%</div>
+        <div class="unit">Enterprise apps with agents</div>
+        <div class="desc">by end of 2026, up from &lt;5% in 2025<br><em>Gartner, Aug 2025</em></div>
+      </div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div class="stat">
+        <div class="number">10–15%</div>
+        <div class="unit">of agentic AI market</div>
+        <div class="desc">"guardian agents" category<br>by 2030 · <em>Gartner</em></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col" style="margin-top:2rem;">
+    <div>
+      <h3 style="margin-bottom:1rem;">Regulatory Tailwinds</h3>
+      <div class="risk-item">
+        <div style="font-size:1.5rem;">🇪🇺</div>
+        <div>
+          <h3>EU AI Act</h3>
+          <p style="font-size:.82rem;">GPAI obligations enforced Aug 2025. High-risk AI compliance required Aug 2026. Fines: <strong>€35M or 7% global turnover</strong>.</p>
+          <div style="margin-top:.5rem;"><span class="badge red">Binding Law</span></div>
+        </div>
+      </div>
+      <div class="risk-item">
+        <div style="font-size:1.5rem;">🏛️</div>
+        <div>
+          <h3>SEC AI Disclosure</h3>
+          <p style="font-size:.82rem;">Public companies must disclose AI risk factors, board oversight, and material AI impacts. AI is SEC Exam Priority #1 for 2026.</p>
+          <div style="margin-top:.5rem;"><span class="badge amber">Active Scrutiny</span></div>
+        </div>
+      </div>
+      <div class="risk-item">
+        <div style="font-size:1.5rem;">🔬</div>
+        <div>
+          <h3>NIST AI RMF</h3>
+          <p style="font-size:.82rem;">Referenced by FTC, FDA, DoD, CFPB as the baseline framework. Govern → Map → Measure → Manage cycle.</p>
+          <div style="margin-top:.5rem;"><span class="badge blue">Industry Standard</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h3 style="margin-bottom:1rem;">The Adoption Curve Creates the Crisis</h3>
+      <div class="card" style="padding:1.5rem;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:1.5rem;">
+          <div class="stat">
+            <div style="font-size:2rem;font-weight:800;color:#dc2626;">&lt;5%</div>
+            <div class="unit">Enterprise app agent penetration</div>
+            <div class="desc">2025</div>
+          </div>
+          <div style="font-size:2rem; color:var(--muted); align-self:center;">→</div>
+          <div class="stat">
+            <div style="font-size:2rem;font-weight:800;color:#16a34a;">40%</div>
+            <div class="unit">Enterprise app agent penetration</div>
+            <div class="desc">End of 2026</div>
+          </div>
+        </div>
+        <p style="font-size:.82rem; color:var(--muted);">8× growth in 12 months. Every agent deployed without governance is a liability. The window to establish controls is <strong>now</strong> — before the audit, the breach, or the regulator.</p>
+      </div>
+    </div>
+  </div>
+  <div class="footnote">Sources: Gartner Newsroom Feb 2026 · Gartner Aug 2025 · EU AI Act Official Journal · SEC 2026 Exam Priorities</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE 4 — THE SOLUTION
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-4">
+  <div class="eyebrow">The Solution</div>
+  <h2>Dox: Runtime Governance<br>for Every Agent You Deploy</h2>
+
+  <div class="two-col" style="margin-top:1.5rem; align-items:start;">
+    <div>
+      <p style="font-size:1.05rem; margin-bottom:1.5rem; line-height:1.8;">
+        Dox sits in the observability layer of your AI stack. Every agent action flows through a canonical event stream — and Dox watches, evaluates, and intervenes in real time.
+      </p>
+
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:1rem; padding:1.5rem; font-family:monospace; font-size:.78rem; line-height:1.8; color:#94a3b8;">
+        <span style="color:#64748b;"># Your agent, instrumented in 3 lines</span><br>
+        <span style="color:#7c3aed;">from</span> <span style="color:#e2e8f0;">dox_sdk</span> <span style="color:#7c3aed;">import</span> <span style="color:#e2e8f0;">DoxClientBuilder</span><br><br>
+        <span style="color:#e2e8f0;">client</span> <span style="color:#64748b;">=</span> <span style="color:#e2e8f0;">DoxClientBuilder()</span><br>
+        &nbsp;&nbsp;<span style="color:#e2e8f0;">.base_url(</span><span style="color:#16a34a;">"https://dox.your-org.com"</span><span style="color:#e2e8f0;">)</span><br>
+        &nbsp;&nbsp;<span style="color:#e2e8f0;">.api_key(</span><span style="color:#16a34a;">"your-agent-jwt"</span><span style="color:#e2e8f0;">)</span><br>
+        &nbsp;&nbsp;<span style="color:#e2e8f0;">.build()</span><br><br>
+        <span style="color:#7c3aed;">await</span> <span style="color:#e2e8f0;">client.emit(event)</span>&nbsp;&nbsp;<span style="color:#64748b;"># fire-and-forget</span>
+      </div>
+
+      <p style="font-size:.82rem; color:var(--muted); margin-top:.75rem;">Non-blocking. Never delays your agent. Zero performance overhead.</p>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:.6rem;">
+      <div class="pill"><div class="dot"></div><strong>Event Ingestion</strong> — canonical stream from every instrumented agent</div>
+      <div class="pill"><div class="dot green"></div><strong>Agent Registry</strong> — lifecycle tracking, heartbeat, version history</div>
+      <div class="pill"><div class="dot amber"></div><strong>Policy Evaluation</strong> — configurable sentinel rules evaluated per event</div>
+      <div class="pill"><div class="dot purple"></div><strong>Automated Interventions</strong> — warn · block · pause · terminate · rollback</div>
+      <div class="pill"><div class="dot teal"></div><strong>Drift Detection</strong> — baseline comparison, behavioural deviation alerts</div>
+      <div class="pill"><div class="dot"></div><strong>Quota Enforcement</strong> — daily/monthly limits per tenant, hard caps</div>
+      <div class="pill"><div class="dot green"></div><strong>Compliance Reporting</strong> — unified governance report, audit trail</div>
+      <div class="pill"><div class="dot amber"></div><strong>Webhook Notifications</strong> — outbound alerts to Slack, PagerDuty, SIEM</div>
+      <div class="pill"><div class="dot purple"></div><strong>Human-Review Workflows</strong> — LangGraph orchestrated escalation loops</div>
+      <div class="pill"><div class="dot teal"></div><strong>Multi-Tenant</strong> — RBAC, tenant isolation, role-gated API</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE 5 — HOW IT WORKS
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-5">
+  <div class="eyebrow">How It Works</div>
+  <h2>Three Layers. One Control Plane.</h2>
+
+  <div class="three-col" style="margin-top:2rem;">
+    <div class="card accent-border">
+      <div style="font-size:2rem; margin-bottom:1rem;">📡</div>
+      <h3>Layer 1: Observe</h3>
+      <div class="divider"></div>
+      <p style="font-size:.85rem; margin-bottom:.75rem;">Every agent action emits a <strong>canonical event</strong> — tool calls, model responses, memory writes, errors, delegation, policy evaluations.</p>
+      <p style="font-size:.85rem;">Events are ingested in real time via the SDK or REST API. Stored with cryptographic hashing for tamper-evident audit trails.</p>
+      <div style="margin-top:1rem;">
+        <span class="badge blue">35 event types</span>
+        <span class="badge blue" style="margin-left:.4rem;">Batch up to 100</span>
+      </div>
+    </div>
+
+    <div class="card amber-border">
+      <div style="font-size:2rem; margin-bottom:1rem;">⚡</div>
+      <h3>Layer 2: Evaluate</h3>
+      <div class="divider"></div>
+      <p style="font-size:.85rem; margin-bottom:.75rem;">Every event is evaluated against your <strong>governance policies</strong> — configurable sentinels for tool misuse, injection, cost loops, hallucination, trajectory drift, delegation, bias, and regulatory breach.</p>
+      <p style="font-size:.85rem;">Policy engine runs synchronously during ingestion. Matched policies trigger immediate interventions.</p>
+      <div style="margin-top:1rem;">
+        <span class="badge amber">11 sentinel types</span>
+        <span class="badge amber" style="margin-left:.4rem;">10 intervention actions</span>
+      </div>
+    </div>
+
+    <div class="card green-border">
+      <div style="font-size:2rem; margin-bottom:1rem;">🛡️</div>
+      <h3>Layer 3: Act</h3>
+      <div class="divider"></div>
+      <p style="font-size:.85rem; margin-bottom:.75rem;">When a policy fires, Dox acts: <strong>warns</strong> the operator, <strong>blocks</strong> the tool call, <strong>pauses</strong> the agent, <strong>requests human review</strong>, or <strong>terminates execution</strong>.</p>
+      <p style="font-size:.85rem;">Actions are logged to the tamper-evident audit trail. Webhooks dispatch to your SIEM, Slack, or PagerDuty. LangGraph workflows route escalations to human reviewers.</p>
+      <div style="margin-top:1rem;">
+        <span class="badge green">Automated</span>
+        <span class="badge green" style="margin-left:.4rem;">Human-in-the-loop</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:2rem; padding:1.25rem 1.75rem;">
+    <div style="display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap; font-size:.82rem;">
+      <span>Your Agent</span>
+      <span style="color:var(--muted);">→</span>
+      <span style="color:var(--accent); font-weight:600;">Dox SDK</span>
+      <span style="color:var(--muted);">→</span>
+      <span>Event Ingestion</span>
+      <span style="color:var(--muted);">→</span>
+      <span>Policy Engine</span>
+      <span style="color:var(--muted);">→</span>
+      <span>Intervention</span>
+      <span style="color:var(--muted);">→</span>
+      <span>Audit Log</span>
+      <span style="color:var(--muted);">→</span>
+      <span>Webhook / Human Review</span>
+      <span style="color:var(--muted);">→</span>
+      <span>Compliance Report</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE 6 — BUSINESS VALUE
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-6">
+  <div class="eyebrow">Business Value</div>
+  <h2>Four Dimensions of<br>Measurable Business Impact</h2>
+
+  <div class="two-col" style="margin-top:1.5rem;">
+    <div class="card red-border" style="padding:2rem;">
+      <div style="font-size:2rem; margin-bottom:.75rem;">💰</div>
+      <h3 style="font-size:1.3rem; margin-bottom:.75rem;">Cost Containment</h3>
+      <p style="font-size:.85rem; margin-bottom:1rem;">Quota enforcement and cost-loop detection cap runaway spend before bills arrive. Set daily and monthly hard limits per tenant. Pause looping agents automatically.</p>
+      <div style="background:rgba(220,38,38,.08); border:1px solid rgba(220,38,38,.2); border-radius:.5rem; padding:.75rem; font-size:.8rem;">
+        <strong>Reference:</strong> Teams using agent cost controls report 60–80% reduction in unexpected token spend vs. unmonitored deployments.
+      </div>
+    </div>
+
+    <div class="card amber-border" style="padding:2rem;">
+      <div style="font-size:2rem; margin-bottom:.75rem;">🛡️</div>
+      <h3 style="font-size:1.3rem; margin-bottom:.75rem;">Risk Reduction</h3>
+      <p style="font-size:.85rem; margin-bottom:1rem;">Prompt injection sentinels, tool misuse blocking, and delegation isolation prevent agents from being weaponised or exfiltrating data. Real-time alerts, not post-incident reviews.</p>
+      <div style="background:rgba(217,119,6,.08); border:1px solid rgba(217,119,6,.2); border-radius:.5rem; padding:.75rem; font-size:.8rem;">
+        <strong>Reference:</strong> IBM: Shadow AI adds $670K average to breach costs. Dox makes every agent action auditable and enforceable.
+      </div>
+    </div>
+
+    <div class="card green-border" style="padding:2rem;">
+      <div style="font-size:2rem; margin-bottom:.75rem;">⚖️</div>
+      <h3 style="font-size:1.3rem; margin-bottom:.75rem;">Regulatory Compliance</h3>
+      <p style="font-size:.85rem; margin-bottom:1rem;">Tamper-evident audit logs, unified compliance reports, and NIST AI RMF-aligned governance workflows give your legal and compliance teams the evidence they need — on demand.</p>
+      <div style="background:rgba(22,163,74,.08); border:1px solid rgba(22,163,74,.2); border-radius:.5rem; padding:.75rem; font-size:.8rem;">
+        <strong>Maps to:</strong> EU AI Act Article 12 (logging), NIST AI RMF Govern/Measure/Manage, SEC AI disclosure requirements.
+      </div>
+    </div>
+
+    <div class="card teal-border" style="padding:2rem;">
+      <div style="font-size:2rem; margin-bottom:.75rem;">🚀</div>
+      <h3 style="font-size:1.3rem; margin-bottom:.75rem;">Accelerated Deployment</h3>
+      <p style="font-size:.85rem; margin-bottom:1rem;">A pre-built governance layer means engineering teams ship agents faster — not slowed by bespoke audit logging and compliance plumbing. Go from prototype to production with confidence.</p>
+      <div style="background:rgba(13,148,136,.08); border:1px solid rgba(13,148,136,.2); border-radius:.5rem; padding:.75rem; font-size:.8rem;">
+        <strong>Estimate:</strong> Replacing custom governance build (~6–12 weeks of eng effort) with Dox integration (~3 hours SDK setup).
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE 7 — ROI
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-7">
+  <div class="eyebrow">Return on Investment</div>
+  <h2>Conservative ROI Model<br>for a Mid-Size Enterprise</h2>
+
+  <div class="two-col" style="margin-top:1.5rem; align-items:start;">
+    <div>
+      <div class="card" style="margin-bottom:1.5rem;">
+        <h3 style="margin-bottom:1rem; color:var(--muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.08em;">Assumptions (50 agents, 12 months)</h3>
+        <table style="width:100%; font-size:.82rem; border-collapse:collapse;">
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:.5rem 0; color:var(--muted);">Active AI agents</td>
+            <td style="padding:.5rem 0; text-align:right; font-weight:600;">50</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:.5rem 0; color:var(--muted);">Monthly token spend (unmonitored)</td>
+            <td style="padding:.5rem 0; text-align:right; font-weight:600;">$85,000</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:.5rem 0; color:var(--muted);">Probability of a cost runaway / year</td>
+            <td style="padding:.5rem 0; text-align:right; font-weight:600;">60%</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:.5rem 0; color:var(--muted);">Avg. runaway cost when it occurs</td>
+            <td style="padding:.5rem 0; text-align:right; font-weight:600;">$47,000</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:.5rem 0; color:var(--muted);">Probability of security incident / year</td>
+            <td style="padding:.5rem 0; text-align:right; font-weight:600;">25%</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:.5rem 0; color:var(--muted);">Avg. breach cost (AI-related)</td>
+            <td style="padding:.5rem 0; text-align:right; font-weight:600;">$670,000</td>
+          </tr>
+          <tr>
+            <td style="padding:.5rem 0; color:var(--muted);">Custom governance build (avoided)</td>
+            <td style="padding:.5rem 0; text-align:right; font-weight:600;">$180,000</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="card" style="background:rgba(37,99,235,.08); border-color:var(--accent);">
+        <h3 style="margin-bottom:1rem; color:var(--accent);">Annual Risk-Adjusted Savings</h3>
+        <table style="width:100%; font-size:.85rem; border-collapse:collapse;">
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:.5rem 0;">Cost runaway prevention (60% × $47K)</td>
+            <td style="padding:.5rem 0; text-align:right; color:#86efac; font-weight:600;">$28,200</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:.5rem 0;">Quota optimisation (15% token reduction)</td>
+            <td style="padding:.5rem 0; text-align:right; color:#86efac; font-weight:600;">$153,000</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:.5rem 0;">Security incident risk reduction (25% × $670K)</td>
+            <td style="padding:.5rem 0; text-align:right; color:#86efac; font-weight:600;">$167,500</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:.5rem 0;">Engineering build cost avoided</td>
+            <td style="padding:.5rem 0; text-align:right; color:#86efac; font-weight:600;">$180,000</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:.5rem 0;">Compliance / audit cost reduction</td>
+            <td style="padding:.5rem 0; text-align:right; color:#86efac; font-weight:600;">$40,000</td>
+          </tr>
+          <tr>
+            <td style="padding:.5rem 0; font-weight:700; color:var(--white);">Total Annual Benefit</td>
+            <td style="padding:.5rem 0; text-align:right; font-weight:800; color:#86efac; font-size:1.1rem;">$568,700</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:1.5rem;">
+      <div class="card" style="text-align:center; padding:2.5rem;">
+        <div class="stat">
+          <div class="number green">14×</div>
+          <div class="unit">Return on Investment</div>
+          <div class="desc">$568K savings vs. ~$40K/yr Dox subscription<br><em>Conservative estimate · 50 agents</em></div>
+        </div>
+      </div>
+
+      <div class="card" style="text-align:center; padding:2rem;">
+        <div class="stat">
+          <div class="number green">&lt;3 wks</div>
+          <div class="unit">Payback Period</div>
+          <div class="desc">Time to first prevented incident<br>typically covers first year's cost</div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:1.5rem;">
+        <h3 style="margin-bottom:.75rem;">What You're NOT Paying For</h3>
+        <div class="pill"><div class="dot red" style="background:#dc2626;"></div>Custom audit logging infrastructure</div>
+        <div class="pill"><div class="dot red" style="background:#dc2626;"></div>Bespoke policy engine development</div>
+        <div class="pill"><div class="dot red" style="background:#dc2626;"></div>Manual compliance report assembly</div>
+        <div class="pill"><div class="dot red" style="background:#dc2626;"></div>Incident response for agent runaway</div>
+        <div class="pill"><div class="dot red" style="background:#dc2626;"></div>Regulatory fine exposure</div>
+      </div>
+    </div>
+  </div>
+  <div class="footnote">ROI model is illustrative. Actual figures vary by deployment size, industry, and incident history. Breach cost: IBM Cost of a Data Breach Report 2025.</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE 8 — USE CASES
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-8">
+  <div class="eyebrow">Use Cases</div>
+  <h2>Governance Scenarios That<br>Matter to Your Business</h2>
+
+  <div class="three-col" style="margin-top:1.5rem;">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:.75rem;">
+        <div style="font-size:1.8rem;">🏦</div>
+        <span class="badge blue">Financial Services</span>
+      </div>
+      <h3 style="margin-bottom:.5rem;">Agentic Trading Assistant</h3>
+      <p style="font-size:.82rem; color:var(--muted); margin-bottom:1rem;">An LLM-powered research agent with access to financial tools and data APIs.</p>
+      <div style="font-size:.8rem;">
+        <div style="color:var(--red); margin-bottom:.4rem;">⚠ Risk: Hallucinated price data triggers erroneous orders</div>
+        <div style="color:var(--red); margin-bottom:.4rem;">⚠ Risk: Prompt injection via news feed exfiltrates positions</div>
+        <div style="color:var(--red); margin-bottom:.8rem;">⚠ Risk: No audit trail for MiFID II / SEC compliance</div>
+        <div style="color:var(--green); margin-bottom:.4rem;">✓ Dox: Hallucination sentinel fires on anomalous outputs</div>
+        <div style="color:var(--green); margin-bottom:.4rem;">✓ Dox: Injection termination blocks mid-task hijacking</div>
+        <div style="color:var(--green);">✓ Dox: Full tamper-evident audit log, compliance report</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:.75rem;">
+        <div style="font-size:1.8rem;">🏥</div>
+        <span class="badge red">Healthcare</span>
+      </div>
+      <h3 style="margin-bottom:.5rem;">Clinical Documentation Agent</h3>
+      <p style="font-size:.82rem; color:var(--muted); margin-bottom:1rem;">An agent that reads EHR records, drafts notes, and interacts with lab systems.</p>
+      <div style="font-size:.8rem;">
+        <div style="color:var(--red); margin-bottom:.4rem;">⚠ Risk: Memory writes containing PHI to unsanctioned stores</div>
+        <div style="color:var(--red); margin-bottom:.4rem;">⚠ Risk: Delegation to unapproved sub-agents</div>
+        <div style="color:var(--red); margin-bottom:.8rem;">⚠ Risk: No HIPAA-ready audit trail</div>
+        <div style="color:var(--green); margin-bottom:.4rem;">✓ Dox: Memory write sentinel + rollback on policy breach</div>
+        <div style="color:var(--green); margin-bottom:.4rem;">✓ Dox: Delegation isolation blocks unapproved sub-agents</div>
+        <div style="color:var(--green);">✓ Dox: Audit log satisfies HIPAA access logging requirements</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:.75rem;">
+        <div style="font-size:1.8rem;">🛒</div>
+        <span class="badge purple">E-Commerce</span>
+      </div>
+      <h3 style="margin-bottom:.5rem;">Autonomous Procurement Agent</h3>
+      <p style="font-size:.82rem; color:var(--muted); margin-bottom:1rem;">An agent that negotiates supplier contracts and executes purchase orders autonomously.</p>
+      <div style="font-size:.8rem;">
+        <div style="color:var(--red); margin-bottom:.4rem;">⚠ Risk: Cost loop — agent re-negotiates same contract endlessly</div>
+        <div style="color:var(--red); margin-bottom:.4rem;">⚠ Risk: Trajectory drift — agent begins approving outside policy</div>
+        <div style="color:var(--red); margin-bottom:.8rem;">⚠ Risk: No human review escalation on high-value orders</div>
+        <div style="color:var(--green); margin-bottom:.4rem;">✓ Dox: Cost loop pause after configurable iteration threshold</div>
+        <div style="color:var(--green); margin-bottom:.4rem;">✓ Dox: Trajectory sentinel detects behavioural deviation</div>
+        <div style="color:var(--green);">✓ Dox: Human-review workflow escalates flagged orders</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1.5rem; padding:1.25rem 1.75rem;">
+    <div style="display:flex; gap:3rem; flex-wrap:wrap;">
+      <div><div class="label">Also applicable to</div></div>
+      <div><span class="badge blue">Legal Research Agents</span></div>
+      <div><span class="badge green">DevOps Automation Agents</span></div>
+      <div><span class="badge amber">Customer Support Agents</span></div>
+      <div><span class="badge purple">HR & Recruiting Agents</span></div>
+      <div><span class="badge blue">Cyber Security SOC Agents</span></div>
+      <div><span class="badge red">Regulatory Filing Agents</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE 9 — COMPETITIVE LANDSCAPE
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-9">
+  <div class="eyebrow">Competitive Landscape</div>
+  <h2>Why Dox Wins on<br>Runtime Governance</h2>
+
+  <div style="margin-top:1.5rem; overflow-x:auto;">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Capability</th>
+          <th>Dox</th>
+          <th>LangSmith / LangFuse</th>
+          <th>Arize / WhyLabs</th>
+          <th>DIY / Custom Build</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Real-time policy enforcement</td>
+          <td><span class="check">✓ Native</span></td>
+          <td><span class="cross">✗ Observability only</span></td>
+          <td><span class="cross">✗ Observability only</span></td>
+          <td><span class="partial">⚠ Months to build</span></td>
+        </tr>
+        <tr>
+          <td>Automated interventions (block/pause/terminate)</td>
+          <td><span class="check">✓ 10 actions</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="partial">⚠ Custom per-agent</span></td>
+        </tr>
+        <tr>
+          <td>Prompt injection sentinel</td>
+          <td><span class="check">✓</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="partial">⚠ Post-hoc only</span></td>
+          <td><span class="partial">⚠ Manual rules</span></td>
+        </tr>
+        <tr>
+          <td>Cost loop detection & pause</td>
+          <td><span class="check">✓</span></td>
+          <td><span class="partial">⚠ Alerts only</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="partial">⚠ Build required</span></td>
+        </tr>
+        <tr>
+          <td>Behavioural drift detection</td>
+          <td><span class="check">✓ Baseline comparison</span></td>
+          <td><span class="partial">⚠ Basic</span></td>
+          <td><span class="check">✓ ML-based</span></td>
+          <td><span class="cross">✗</span></td>
+        </tr>
+        <tr>
+          <td>Tamper-evident audit log</td>
+          <td><span class="check">✓ Hash chain</span></td>
+          <td><span class="partial">⚠ Logs, not auditable</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="partial">⚠ Build required</span></td>
+        </tr>
+        <tr>
+          <td>Compliance report (EU AI Act / NIST)</td>
+          <td><span class="check">✓ Built-in</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="partial">⚠ Partial</span></td>
+          <td><span class="cross">✗</span></td>
+        </tr>
+        <tr>
+          <td>Multi-tenant RBAC</td>
+          <td><span class="check">✓ 4-role model</span></td>
+          <td><span class="partial">⚠ Workspace-level</span></td>
+          <td><span class="partial">⚠ Basic</span></td>
+          <td><span class="partial">⚠ Build required</span></td>
+        </tr>
+        <tr>
+          <td>Cloud-agnostic / on-prem</td>
+          <td><span class="check">✓ Any infra</span></td>
+          <td><span class="cross">✗ SaaS only</span></td>
+          <td><span class="cross">✗ SaaS only</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>Time to production</td>
+          <td><span class="check">✓ Hours</span></td>
+          <td><span class="check">✓ Hours</span></td>
+          <td><span class="partial">⚠ Days</span></td>
+          <td><span class="cross">✗ 2–4 months</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:1.5rem; padding:1rem 1.5rem; background:rgba(37,99,235,.06); border-color:var(--accent);">
+    <p style="font-size:.85rem;"><strong style="color:var(--white);">Dox's differentiator:</strong> The only platform that combines real-time policy enforcement with automated interventions, compliance reporting, and an on-prem deployment option — in a single control plane. Observability tools tell you what happened. Dox <em>stops it from happening</em>.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE 10 — ENTERPRISE READINESS
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-10">
+  <div class="eyebrow">Enterprise Readiness</div>
+  <h2>Built for Production<br>From Day One</h2>
+
+  <div class="three-col" style="margin-top:1.5rem;">
+    <div class="card">
+      <h3 style="margin-bottom:1rem;">🔐 Security</h3>
+      <div class="pill"><div class="dot green"></div>HS256 JWT authentication</div>
+      <div class="pill"><div class="dot green"></div>4-role RBAC (admin / operator / viewer / agent)</div>
+      <div class="pill"><div class="dot green"></div>Tenant isolation — strict data segregation</div>
+      <div class="pill"><div class="dot green"></div>Tamper-evident audit log (SHA-256 hash chain)</div>
+      <div class="pill"><div class="dot green"></div>Pluggable secret store (Vault, env, custom)</div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:1rem;">⚙️ Reliability</h3>
+      <div class="pill"><div class="dot"></div>Async PostgreSQL 16 with connection pooling</div>
+      <div class="pill"><div class="dot"></div>Redis Streams event bus — durable, ordered</div>
+      <div class="pill"><div class="dot"></div>Liveness + readiness probes (/healthz, /readyz)</div>
+      <div class="pill"><div class="dot"></div>OpenTelemetry tracing — W3C propagation</div>
+      <div class="pill"><div class="dot"></div>Alembic schema migrations — zero-downtime</div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:1rem;">🏗️ Architecture</h3>
+      <div class="pill"><div class="dot amber"></div>Cloud-agnostic — AWS, GCP, Azure, on-prem</div>
+      <div class="pill"><div class="dot amber"></div>Pluggable adapters — swap any component</div>
+      <div class="pill"><div class="dot amber"></div>Docker Compose for local; Helm for K8s</div>
+      <div class="pill"><div class="dot amber"></div>REST API — integrates with any stack</div>
+      <div class="pill"><div class="dot amber"></div>1,372 tests · 80%+ line coverage</div>
+    </div>
+  </div>
+
+  <div class="two-col" style="margin-top:1.5rem;">
+    <div class="card accent-border" style="padding:1.25rem 1.75rem;">
+      <h3 style="margin-bottom:.75rem;">Compliance Alignment</h3>
+      <div style="display:flex; gap:.6rem; flex-wrap:wrap;">
+        <span class="badge blue">EU AI Act Art. 12 (Logging)</span>
+        <span class="badge blue">NIST AI RMF Govern/Measure/Manage</span>
+        <span class="badge blue">SEC AI Disclosure</span>
+        <span class="badge blue">ISO/IEC 42001 (Audit Evidence)</span>
+        <span class="badge blue">OWASP LLM Top 10</span>
+      </div>
+    </div>
+    <div class="card green-border" style="padding:1.25rem 1.75rem;">
+      <h3 style="margin-bottom:.75rem;">Integration Ecosystem</h3>
+      <div style="display:flex; gap:.6rem; flex-wrap:wrap;">
+        <span class="badge green">Slack</span>
+        <span class="badge green">PagerDuty</span>
+        <span class="badge green">Splunk / SIEM</span>
+        <span class="badge green">LangGraph</span>
+        <span class="badge green">LangChain</span>
+        <span class="badge green">Any REST Webhook</span>
+        <span class="badge green">Prometheus</span>
+        <span class="badge green">OpenTelemetry</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE 11 — PRICING
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-11">
+  <div class="eyebrow">Commercial Model</div>
+  <h2>Simple, Predictable Pricing<br>That Scales With Your Agents</h2>
+
+  <div class="three-col" style="margin-top:2rem;">
+    <div class="pricing-card">
+      <div class="label" style="margin-bottom:.5rem;">Starter</div>
+      <div class="price">$2,500<span class="price-unit">/month</span></div>
+      <div class="divider"></div>
+      <div class="pill" style="margin-top:1rem;"><div class="dot green"></div>Up to 10 agents</div>
+      <div class="pill"><div class="dot green"></div>1M events / month</div>
+      <div class="pill"><div class="dot green"></div>Full policy engine</div>
+      <div class="pill"><div class="dot green"></div>Compliance reporting</div>
+      <div class="pill"><div class="dot green"></div>3 webhook endpoints</div>
+      <div class="pill"><div class="dot green"></div>Email support</div>
+      <div class="pill"><div class="dot red" style="background:#dc2626;"></div>SaaS deployment only</div>
+    </div>
+
+    <div class="pricing-card featured">
+      <div class="featured-badge">Most Popular</div>
+      <div class="label" style="margin-bottom:.5rem;">Professional</div>
+      <div class="price">$8,500<span class="price-unit">/month</span></div>
+      <div class="divider"></div>
+      <div class="pill" style="margin-top:1rem;"><div class="dot green"></div>Up to 50 agents</div>
+      <div class="pill"><div class="dot green"></div>10M events / month</div>
+      <div class="pill"><div class="dot green"></div>Full policy engine + drift</div>
+      <div class="pill"><div class="dot green"></div>Compliance + audit reports</div>
+      <div class="pill"><div class="dot green"></div>Unlimited webhooks</div>
+      <div class="pill"><div class="dot green"></div>Human-review workflows</div>
+      <div class="pill"><div class="dot green"></div>SaaS or on-prem</div>
+      <div class="pill"><div class="dot green"></div>Slack + priority support</div>
+    </div>
+
+    <div class="pricing-card">
+      <div class="label" style="margin-bottom:.5rem;">Enterprise</div>
+      <div class="price" style="font-size:1.8rem;">Custom</div>
+      <div class="divider"></div>
+      <div class="pill" style="margin-top:1rem;"><div class="dot green"></div>Unlimited agents</div>
+      <div class="pill"><div class="dot green"></div>Unlimited events</div>
+      <div class="pill"><div class="dot green"></div>Custom sentinel types</div>
+      <div class="pill"><div class="dot green"></div>Air-gapped / on-prem</div>
+      <div class="pill"><div class="dot green"></div>SSO / SAML</div>
+      <div class="pill"><div class="dot green"></div>SLA 99.9%</div>
+      <div class="pill"><div class="dot green"></div>Dedicated CSM</div>
+      <div class="pill"><div class="dot green"></div>Professional services</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:2rem; padding:1.25rem 2rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+    <div>
+      <div class="label">All plans include</div>
+      <div style="display:flex; gap:.6rem; flex-wrap:wrap; margin-top:.4rem;">
+        <span class="badge blue">14-day free trial</span>
+        <span class="badge green">No per-seat cost</span>
+        <span class="badge green">Annual discount 20%</span>
+        <span class="badge amber">POC / pilot pricing available</span>
+      </div>
+    </div>
+    <div style="text-align:right;">
+      <div class="label">Time to first value</div>
+      <div style="font-weight:700; font-size:1.1rem; color:var(--white);">&lt; 1 day</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE 12 — ROADMAP
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-12">
+  <div class="eyebrow">Product Roadmap</div>
+  <h2>Where We're Going</h2>
+
+  <div class="timeline" style="margin-top:2rem;">
+    <div class="tl-item">
+      <div class="tl-date">NOW · GA</div>
+      <div class="tl-text" style="font-weight:600; color:var(--white); margin-bottom:.5rem;">Core Platform</div>
+      <div class="tl-text">Event ingestion & SDK</div>
+      <div class="tl-text">Policy engine (11 types)</div>
+      <div class="tl-text">Sentinel alerts</div>
+      <div class="tl-text">Drift detection</div>
+      <div class="tl-text">Quota enforcement</div>
+      <div class="tl-text">Compliance reporting</div>
+      <div class="tl-text">Webhook delivery</div>
+      <div class="tl-text">LangGraph workflows</div>
+    </div>
+    <div class="tl-item active-q">
+      <div class="tl-date">Q3 2026</div>
+      <div class="tl-text" style="font-weight:600; color:var(--white); margin-bottom:.5rem;">Intelligence Layer</div>
+      <div class="tl-text">ML-based anomaly detection</div>
+      <div class="tl-text">Auto-baseline computation</div>
+      <div class="tl-text">Causal chain analysis</div>
+      <div class="tl-text">Risk scoring per agent</div>
+      <div class="tl-text">Natural language policy authoring</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">Q4 2026</div>
+      <div class="tl-text" style="font-weight:600; color:var(--white); margin-bottom:.5rem;">Enterprise Features</div>
+      <div class="tl-text">SSO / SAML / SCIM</div>
+      <div class="tl-text">Helm chart + K8s operator</div>
+      <div class="tl-text">Prometheus / Grafana dashboards</div>
+      <div class="tl-text">EU AI Act automated evidence pack</div>
+      <div class="tl-text">Custom retention policies</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">H1 2027</div>
+      <div class="tl-text" style="font-weight:600; color:var(--white); margin-bottom:.5rem;">Ecosystem Expansion</div>
+      <div class="tl-text">Native connectors: Salesforce, ServiceNow</div>
+      <div class="tl-text">Marketplace policy templates</div>
+      <div class="tl-text">Red-team simulation mode</div>
+      <div class="tl-text">Multi-framework SDK (JS, Go, Java)</div>
+      <div class="tl-text">Governance-as-code (YAML pipelines)</div>
+    </div>
+  </div>
+
+  <div class="two-col" style="margin-top:2rem;">
+    <div class="card accent-border">
+      <h3 style="margin-bottom:.75rem;">Design Principles</h3>
+      <div class="pill"><div class="dot"></div>API-first — everything is programmable</div>
+      <div class="pill"><div class="dot"></div>Adapter pattern — swap any backend component</div>
+      <div class="pill"><div class="dot"></div>Non-blocking — never slows your agents</div>
+      <div class="pill"><div class="dot"></div>Open standards — OpenTelemetry, W3C, NIST</div>
+    </div>
+    <div class="card green-border">
+      <h3 style="margin-bottom:.75rem;">What Customers Shape</h3>
+      <p style="font-size:.85rem; color:var(--muted);">Our roadmap is co-developed with design partners. Early enterprise customers get direct influence over Q3–Q4 features, priority support access, and locked-in pricing for 24 months.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE 13 — CTA
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-13">
+  <div class="eyebrow">Next Steps</div>
+  <h1 style="font-size:3rem;">Your Agents Are Running.<br><span class="grad">Is Your Governance?</span></h1>
+
+  <p class="big-quote">"The organisations that win the agentic AI era will be those who move fast <em>and</em> govern well. Those are not in conflict — they are the same discipline."</p>
+
+  <div class="three-col" style="margin-top:2.5rem; max-width:70rem; margin-left:auto; margin-right:auto;">
+    <div class="card" style="text-align:center; padding:2rem;">
+      <div style="font-size:2.5rem; margin-bottom:1rem;">🔬</div>
+      <h3 style="margin-bottom:.5rem;">Proof of Concept</h3>
+      <p style="font-size:.82rem; color:var(--muted);">14-day guided POC on your own agents. We instrument, configure policies, and show you what Dox catches.</p>
+      <div style="margin-top:1rem; font-size:.8rem; color:var(--accent); font-weight:600;">→ No contract required</div>
+    </div>
+
+    <div class="card featured" style="text-align:center; padding:2rem;">
+      <div style="font-size:2.5rem; margin-bottom:1rem;">🤝</div>
+      <h3 style="margin-bottom:.5rem;">Design Partnership</h3>
+      <p style="font-size:.82rem; color:var(--muted);">Become a design partner. Influence the roadmap, get 24-month locked pricing, and co-author your governance framework.</p>
+      <div style="margin-top:1rem; font-size:.8rem; color:var(--accent); font-weight:600;">→ 3 spots available Q3 2026</div>
+    </div>
+
+    <div class="card" style="text-align:center; padding:2rem;">
+      <div style="font-size:2.5rem; margin-bottom:1rem;">📋</div>
+      <h3 style="margin-bottom:.5rem;">Risk Assessment</h3>
+      <p style="font-size:.82rem; color:var(--muted);">Free 2-hour workshop. We map your agent deployments, identify your top 3 governance risks, and quantify your exposure.</p>
+      <div style="margin-top:1rem; font-size:.8rem; color:var(--accent); font-weight:600;">→ Deliverable: risk report</div>
+    </div>
+  </div>
+
+  <div style="margin-top:2.5rem; display:flex; gap:3rem; justify-content:center; flex-wrap:wrap;">
+    <div>
+      <div class="label">Contact</div>
+      <div style="font-weight:600;">team@dox.ai</div>
+    </div>
+    <div>
+      <div class="label">Repository</div>
+      <div style="font-weight:600;">github.com/baatasaari/dox</div>
+    </div>
+    <div>
+      <div class="label">Documentation</div>
+      <div style="font-weight:600;">docs.dox.ai</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Navigation ── -->
+<div id="nav">
+  <button id="btn-prev" onclick="navigate(-1)" disabled>←</button>
+  <span id="slide-counter">1 / 13</span>
+  <button id="btn-next" onclick="navigate(1)">→</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total  = slides.length;
+  let   cur    = 0;
+
+  function show(n) {
+    slides[cur].classList.remove('active');
+    cur = Math.max(0, Math.min(total - 1, n));
+    slides[cur].classList.add('active');
+    document.getElementById('slide-counter').textContent = `${cur + 1} / ${total}`;
+    document.getElementById('btn-prev').disabled = cur === 0;
+    document.getElementById('btn-next').disabled = cur === total - 1;
+    document.getElementById('progress').style.width = `${((cur + 1) / total) * 100}%`;
+  }
+
+  function navigate(dir) { show(cur + dir); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') navigate(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                     navigate(-1);
+  });
+
+  // Touch swipe support
+  let touchX = 0;
+  document.addEventListener('touchstart', e => touchX = e.touches[0].clientX);
+  document.addEventListener('touchend',   e => {
+    const dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 50) navigate(dx < 0 ? 1 : -1);
+  });
+
+  show(0);
+</script>
+</body>
+</html>
