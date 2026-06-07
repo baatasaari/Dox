@@ -59,3 +59,4 @@ local_fs_store/
 # Alembic
 alembic/versions/*.pyc
 dox-openapi.json
+pitch-deck/
