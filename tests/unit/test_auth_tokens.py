@@ -78,8 +78,13 @@ class TestDecodeAccessToken:
 
     def test_tampered_signature_raises_authentication_error(self) -> None:
         token = create_access_token(user_id=uuid4(), tenant_id="t", role="viewer")
-        last_char = token[-1]
-        tampered = token[:-1] + ("b" if last_char != "b" else "c")
+        header, payload, sig = token.rsplit(".", 2)
+        # Corrupt a byte in the middle of the signature — avoids the unused-bits
+        # ambiguity of base64url's final character, which can flip without changing
+        # the decoded bytes and would let verification pass ~1-in-64 runs.
+        mid = len(sig) // 2
+        corrupt_char = "b" if sig[mid] != "b" else "c"
+        tampered = f"{header}.{payload}.{sig[:mid]}{corrupt_char}{sig[mid + 1:]}"
         with pytest.raises(AuthenticationError):
             decode_access_token(tampered)
 
