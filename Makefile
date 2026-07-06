@@ -1,4 +1,4 @@
-.PHONY: install dev stop clean migrate migrate-create test test-unit lint lint-fix seed help
+.PHONY: install dev stop clean migrate migrate-create test test-unit test-integration lint lint-fix seed help
 
 help:
 	@echo "Dox — available targets:"
@@ -52,6 +52,9 @@ test:
 
 test-unit:
 	poetry run pytest tests/unit/ --no-cov
+
+test-integration:
+	poetry run pytest tests/integration/test_tenant_isolation.py -v --no-cov
 
 lint:
 	poetry run ruff check .
