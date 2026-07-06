@@ -30,7 +30,7 @@ os.environ.setdefault("DOX_SECRET_KEY", "integration-test-secret-key")
 import pytest
 import pytest_asyncio
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
 from alembic import command
 from alembic.config import Config
@@ -80,6 +80,17 @@ def apply_migrations() -> None:  # type: ignore[return]
 # ---------------------------------------------------------------------------
 # Function-scoped fixtures
 # ---------------------------------------------------------------------------
+
+@pytest_asyncio.fixture
+async def real_engine(apply_migrations: None) -> AsyncEngine:  # type: ignore[return]
+    """Engine for tests that issue real commits (no transaction rollback wrapper).
+
+    Tests using this fixture are responsible for their own cleanup.
+    """
+    engine = create_async_engine(TEST_DB_URL, echo=False)
+    yield engine  # type: ignore[misc]
+    await engine.dispose()
+
 
 @pytest_asyncio.fixture
 async def db_session(apply_migrations: None) -> AsyncSession:  # type: ignore[return]

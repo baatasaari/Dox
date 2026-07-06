@@ -77,7 +77,16 @@ class QuotaService:
 
     async def check_and_increment(self, tenant_id: str) -> None:
         """Raise ``QuotaExceededError`` if the tenant is over limit; otherwise count the event."""
-        quota = await self._get_or_create(tenant_id)
+        # Ensure the row exists (idempotent create if missing).
+        await self._get_or_create(tenant_id)
+        # Re-fetch with a row-level lock so concurrent callers serialize here and
+        # each reads the freshest counter value before deciding to increment.
+        result = await self._session.execute(
+            select(TenantQuota)
+            .where(TenantQuota.tenant_id == tenant_id)
+            .with_for_update()
+        )
+        quota = result.scalar_one()
         self._maybe_reset_windows(quota)
 
         if quota.events_today >= quota.daily_limit:
