@@ -12,20 +12,21 @@ from __future__ import annotations
 
 import pytest
 import sqlalchemy as sa
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from alembic import command
-from alembic.config import Config
-from alembic.script import ScriptDirectory
 
-_EXPECTED_REVISION_COUNT = 8
-_EXPECTED_HEAD = "0008"
+_EXPECTED_REVISION_COUNT = 9
+_EXPECTED_HEAD = "0009"
 
 _EXPECTED_TABLES = {
     "events",
     "tenant_quotas",
     "agent_profiles",
     "audit_entries",
+    "session_replays",
 }
 
 
